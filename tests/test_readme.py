@@ -32,11 +32,11 @@ def test_readme_mentions_required_strategies() -> None:
         assert strategy in readme
 
 
-def test_submission_checklist_exists() -> None:
-    checklist = Path("SUBMISSION_CHECKLIST.md")
+def test_swagger_runs_readme_exists() -> None:
+    swagger_runs = Path("SWAGGER_RUNS.md")
 
-    assert checklist.exists()
-    text = checklist.read_text(encoding="utf-8")
-    assert "python -m pytest" in text
-    assert "Loom" in text
-    assert "screenshots" in text
+    assert swagger_runs.exists()
+    text = swagger_runs.read_text(encoding="utf-8")
+    assert "400 Bad Request" in text
+    assert "minimize_volatility" in text
+    assert "optimize_factor_exposure" in text
