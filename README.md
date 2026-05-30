@@ -187,4 +187,4 @@ They cover:
 
 ## Submission
 
-See `SUBMISSION_CHECKLIST.md` for final verification steps, screenshots, and Loom reminders.
+See `SWAGGER_RUNS.md` for Swagger request/response evidence from local testing.
