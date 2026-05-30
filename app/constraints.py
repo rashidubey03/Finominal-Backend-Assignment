@@ -1,3 +1,5 @@
+"""Shared validation helpers for weight and portfolio metric constraints."""
+
 from app.schemas import Constraints
 
 
@@ -69,4 +71,3 @@ def validate_all_constraints(
 ) -> None:
     validate_weight_constraints(weights, constraints)
     validate_metric_constraints(metrics, constraints)
-

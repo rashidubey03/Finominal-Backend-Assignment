@@ -1,3 +1,5 @@
+"""Reusable portfolio return, risk, drawdown, and yield calculations."""
+
 import math
 
 import numpy as np
@@ -100,4 +102,3 @@ def round_weights_to_100(weights: dict[str, float], decimals: int = 4) -> dict[s
 
 def covariance_matrix(return_matrix: pd.DataFrame) -> np.ndarray:
     return return_matrix.cov().to_numpy() * TRADING_DAYS
-

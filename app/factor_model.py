@@ -1,3 +1,5 @@
+"""Factor beta regression helpers for Momentum, Value, and Size exposure."""
+
 import numpy as np
 import pandas as pd
 
@@ -36,4 +38,3 @@ def target_factor_beta(
 ) -> float:
     betas = calculate_factor_betas(fund_return_matrix, factor_return_matrix, weights)
     return betas.get(factor_target, 0.0)
-

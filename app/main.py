@@ -1,3 +1,5 @@
+"""FastAPI application entrypoint and lightweight service endpoints."""
+
 from fastapi import FastAPI
 
 from app.api import build_router
