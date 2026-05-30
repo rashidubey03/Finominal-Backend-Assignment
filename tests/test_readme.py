@@ -31,3 +31,12 @@ def test_readme_mentions_required_strategies() -> None:
     ]:
         assert strategy in readme
 
+
+def test_submission_checklist_exists() -> None:
+    checklist = Path("SUBMISSION_CHECKLIST.md")
+
+    assert checklist.exists()
+    text = checklist.read_text(encoding="utf-8")
+    assert "python -m pytest" in text
+    assert "Loom" in text
+    assert "screenshots" in text

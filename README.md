@@ -185,3 +185,6 @@ They cover:
 - No frontend, auth, database, deployment, or live market data.
 - `Docs/` is intentionally ignored and not pushed because it contains local assignment/context files.
 
+## Submission
+
+See `SUBMISSION_CHECKLIST.md` for final verification steps, screenshots, and Loom reminders.
