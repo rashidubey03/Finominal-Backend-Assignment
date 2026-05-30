@@ -44,7 +44,7 @@ class Constraints(BaseModel):
     max_weight: float = Field(default=100, ge=0, le=100)
     min_dividend_yield: float | None = Field(default=None, ge=0)
     min_cagr: float | None = None
-    max_drawdown: float | None = None
+    max_drawdown: float | None = Field(default=None, ge=0)
     volatility_min: float | None = Field(default=None, ge=0)
     volatility_max: float | None = Field(default=None, ge=0)
 
@@ -132,4 +132,3 @@ class OptimizeResponse(BaseModel):
     factor_betas: FactorBetas | None = None
 
     model_config = ConfigDict(use_enum_values=True)
-

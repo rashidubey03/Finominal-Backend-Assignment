@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
+from app.constraints import ConstraintViolation, validate_all_constraints
 from app.data_loader import PortfolioData
 from app.portfolio_math import calculate_metrics, round_weights_to_100
 from app.schemas import (
@@ -34,6 +35,11 @@ def build_router(data: PortfolioData) -> APIRouter:
         optimized_weights = equal_weight_allocation(tickers)
         return_matrix = data.fund_return_matrix(tickers)
         metrics = calculate_metrics(return_matrix, optimized_weights, metadata)
+        try:
+            validate_all_constraints(optimized_weights, metrics, request.constraints)
+        except ConstraintViolation as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         allocation_changes = [
             AllocationChange(
                 ticker=holding.ticker,

@@ -113,3 +113,20 @@ def test_optimize_rejects_infeasible_min_weight() -> None:
 
     assert response.status_code == 422
     assert "min_weight constraints are infeasible" in str(response.json())
+
+
+def test_optimize_rejects_unsatisfied_runtime_constraint() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "IEFA", "weight": 25},
+                {"ticker": "SPY", "weight": 75},
+            ],
+            "strategy": "equal_weights",
+            "constraints": {"max_drawdown": 0.01},
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "portfolio drawdown exceeds max_drawdown"
