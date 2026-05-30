@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api import build_router
 from app.data_loader import load_portfolio_data
 
 app = FastAPI(
@@ -9,6 +10,7 @@ app = FastAPI(
 )
 
 portfolio_data = load_portfolio_data()
+app.include_router(build_router(portfolio_data))
 
 
 @app.get("/health")
@@ -29,4 +31,3 @@ def data_summary() -> dict[str, object]:
         "fund_return_rows": len(portfolio_data.fund_returns),
         "factor_return_rows": len(portfolio_data.factor_returns),
     }
-
