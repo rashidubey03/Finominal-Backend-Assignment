@@ -1,3 +1,5 @@
+"""Pydantic request and response models for the optimizer API."""
+
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator

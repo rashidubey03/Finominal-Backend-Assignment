@@ -1,3 +1,5 @@
+"""API routes that validate requests and return optimization responses."""
+
 from fastapi import APIRouter, HTTPException
 
 from app.constraints import ConstraintViolation, validate_all_constraints

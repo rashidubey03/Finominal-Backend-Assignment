@@ -1,3 +1,5 @@
+"""Load and normalize the assignment Excel workbook into API-ready dataframes."""
+
 from dataclasses import dataclass
 from pathlib import Path
 
