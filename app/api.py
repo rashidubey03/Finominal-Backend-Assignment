@@ -49,6 +49,10 @@ def build_router(data: PortfolioData) -> APIRouter:
                 request.constraints,
                 factor_return_matrix=factor_return_matrix,
                 factor_target=factor_target,
+                dividend_yields={
+                    ticker: float(meta["dividend_yield"] or 0)
+                    for ticker, meta in metadata.items()
+                },
             )
         except OptimizationError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc

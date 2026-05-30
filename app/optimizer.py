@@ -24,6 +24,7 @@ def optimize_weights(
     constraints: Constraints,
     factor_return_matrix: pd.DataFrame | None = None,
     factor_target: str | None = None,
+    dividend_yields: dict[str, float] | None = None,
 ) -> dict[str, float]:
     tickers = list(return_matrix.columns)
     strategy_value = str(strategy)
@@ -35,15 +36,44 @@ def optimize_weights(
         tickers
     )
     initial = initial_guess(len(tickers), bounds)
+    scipy_constraints = build_scipy_constraints(
+        return_matrix,
+        constraints,
+        dividend_yields or {},
+    )
 
     if strategy_value == Strategy.MINIMIZE_VOLATILITY.value:
-        result = solve(return_matrix, bounds, initial, portfolio_volatility_objective)
+        result = solve(
+            return_matrix,
+            bounds,
+            initial,
+            portfolio_volatility_objective,
+            scipy_constraints=scipy_constraints,
+        )
     elif strategy_value == Strategy.MAXIMIZE_SHARPE.value:
-        result = solve(return_matrix, bounds, initial, negative_sharpe_objective)
+        result = solve(
+            return_matrix,
+            bounds,
+            initial,
+            negative_sharpe_objective,
+            scipy_constraints=scipy_constraints,
+        )
     elif strategy_value == Strategy.RISK_PARITY.value:
-        result = solve(return_matrix, bounds, initial, risk_parity_objective)
+        result = solve(
+            return_matrix,
+            bounds,
+            initial,
+            risk_parity_objective,
+            scipy_constraints=scipy_constraints,
+        )
     elif strategy_value == Strategy.MINIMIZE_DRAWDOWN.value:
-        result = solve(return_matrix, bounds, initial, drawdown_objective)
+        result = solve(
+            return_matrix,
+            bounds,
+            initial,
+            drawdown_objective,
+            scipy_constraints=scipy_constraints,
+        )
     elif strategy_value == Strategy.OPTIMIZE_FACTOR_EXPOSURE.value:
         if factor_return_matrix is None or factor_target is None:
             raise OptimizationError("factor_target is required for factor exposure")
@@ -54,6 +84,7 @@ def optimize_weights(
             negative_factor_exposure_objective,
             factor_return_matrix,
             factor_target,
+            scipy_constraints=scipy_constraints,
         )
     else:
         raise OptimizationError(f"Unsupported strategy: {strategy}")
@@ -83,6 +114,7 @@ def solve(
     initial: np.ndarray,
     objective,
     *extra_args,
+    scipy_constraints: list[dict] | None = None,
 ):
     result = minimize(
         objective,
@@ -90,7 +122,8 @@ def solve(
         args=(return_matrix, *extra_args),
         method="SLSQP",
         bounds=bounds,
-        constraints=({"type": "eq", "fun": lambda weights: np.sum(weights) - 1},),
+        constraints=scipy_constraints
+        or [{"type": "eq", "fun": lambda weights: np.sum(weights) - 1}],
         options={"maxiter": 1000, "ftol": 1e-12},
     )
     if not result.success:
@@ -165,3 +198,85 @@ def negative_factor_exposure_objective(
         factor_target,
     )
     return -exposure
+
+
+def build_scipy_constraints(
+    return_matrix: pd.DataFrame,
+    constraints: Constraints,
+    dividend_yields: dict[str, float],
+) -> list[dict]:
+    scipy_constraints: list[dict] = [
+        {"type": "eq", "fun": lambda weights: np.sum(weights) - 1}
+    ]
+
+    if constraints.min_dividend_yield is not None:
+        yields = np.array(
+            [dividend_yields.get(ticker, 0.0) for ticker in return_matrix.columns]
+        )
+        scipy_constraints.append(
+            {
+                "type": "ineq",
+                "fun": lambda weights, yields=yields: float(weights @ yields)
+                - float(constraints.min_dividend_yield),
+            }
+        )
+
+    if constraints.min_cagr is not None:
+        scipy_constraints.append(
+            {
+                "type": "ineq",
+                "fun": lambda weights: annualized_return(
+                    portfolio_return_series(
+                        return_matrix,
+                        weights_dict(return_matrix, weights),
+                    )
+                )
+                - float(constraints.min_cagr),
+            }
+        )
+
+    if constraints.volatility_min is not None:
+        scipy_constraints.append(
+            {
+                "type": "ineq",
+                "fun": lambda weights: annualized_volatility(
+                    portfolio_return_series(
+                        return_matrix,
+                        weights_dict(return_matrix, weights),
+                    )
+                )
+                - float(constraints.volatility_min),
+            }
+        )
+
+    if constraints.volatility_max is not None:
+        scipy_constraints.append(
+            {
+                "type": "ineq",
+                "fun": lambda weights: float(constraints.volatility_max)
+                - annualized_volatility(
+                    portfolio_return_series(
+                        return_matrix,
+                        weights_dict(return_matrix, weights),
+                    )
+                ),
+            }
+        )
+
+    if constraints.max_drawdown is not None:
+        scipy_constraints.append(
+            {
+                "type": "ineq",
+                "fun": lambda weights: float(constraints.max_drawdown)
+                - abs(
+                    max_drawdown(
+                        portfolio_return_series(
+                            return_matrix,
+                            weights_dict(return_matrix, weights),
+                        )
+                    )
+                ),
+            }
+        )
+
+    return scipy_constraints

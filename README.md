@@ -28,3 +28,13 @@ curl http://127.0.0.1:8000/health
 pytest
 ```
 
+## Acceptance Scenarios
+
+The required assignment scenarios are covered in:
+
+```bash
+python -m pytest tests/test_acceptance_scenarios.py
+```
+
+They validate all five required strategies plus the bonus factor exposure case.
+

@@ -67,6 +67,21 @@ def test_strategy_respects_min_max_constraints(returns: pd.DataFrame) -> None:
     validate_weight_constraints(weights, constraints)
 
 
+def test_strategy_respects_min_dividend_yield(returns: pd.DataFrame) -> None:
+    weights = optimize_weights(
+        Strategy.MAXIMIZE_SHARPE,
+        returns,
+        Constraints(min_dividend_yield=0.035),
+        dividend_yields={"AAA": 0.01, "BBB": 0.04, "CCC": 0.05},
+    )
+
+    dividend_yield = sum(
+        (weight / 100) * {"AAA": 0.01, "BBB": 0.04, "CCC": 0.05}[ticker]
+        for ticker, weight in weights.items()
+    )
+    assert dividend_yield >= 0.035
+
+
 def test_optimize_factor_exposure(returns: pd.DataFrame) -> None:
     factors = pd.DataFrame(
         {
