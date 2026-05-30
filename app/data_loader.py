@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 
-DATA_FILE = Path("Docs/Data.xlsx")
+DATA_FILE = Path("Data.xlsx")
 
 
 class DataLoadError(ValueError):
