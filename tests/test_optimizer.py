@@ -66,3 +66,22 @@ def test_strategy_respects_min_max_constraints(returns: pd.DataFrame) -> None:
 
     validate_weight_constraints(weights, constraints)
 
+
+def test_optimize_factor_exposure(returns: pd.DataFrame) -> None:
+    factors = pd.DataFrame(
+        {
+            "momentum": returns["AAA"] * 0.5 + returns["CCC"] * 0.1,
+            "value": returns["BBB"],
+            "size": returns["CCC"],
+        }
+    )
+
+    weights = optimize_weights(
+        Strategy.OPTIMIZE_FACTOR_EXPOSURE,
+        returns,
+        Constraints(),
+        factor_return_matrix=factors,
+        factor_target="momentum",
+    )
+
+    assert_valid_weights(weights)

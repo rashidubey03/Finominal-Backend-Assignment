@@ -71,6 +71,37 @@ def test_optimize_runs_non_equal_strategy() -> None:
     assert optimized_total == pytest.approx(100)
 
 
+def test_optimize_factor_exposure_returns_betas() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "IEFA", "weight": 20},
+                {"ticker": "GLD", "weight": 20},
+                {"ticker": "AGG", "weight": 20},
+                {"ticker": "VEA", "weight": 20},
+                {"ticker": "SPY", "weight": 20},
+            ],
+            "strategy": "optimize_factor_exposure",
+            "factor_target": "momentum",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["factor_betas"] is not None
+    assert set(body["factor_betas"]["current_portfolio"]) == {
+        "momentum",
+        "value",
+        "size",
+    }
+    assert set(body["factor_betas"]["optimized_portfolio"]) == {
+        "momentum",
+        "value",
+        "size",
+    }
+
+
 def test_optimize_normalizes_strategy_alias_and_ticker() -> None:
     response = client.post(
         "/optimize",

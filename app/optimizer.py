@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from app.factor_model import target_factor_beta
 from app.portfolio_math import (
     annualized_return,
     annualized_volatility,
@@ -21,6 +22,8 @@ def optimize_weights(
     strategy: Strategy | str,
     return_matrix: pd.DataFrame,
     constraints: Constraints,
+    factor_return_matrix: pd.DataFrame | None = None,
+    factor_target: str | None = None,
 ) -> dict[str, float]:
     tickers = list(return_matrix.columns)
     strategy_value = str(strategy)
@@ -41,6 +44,17 @@ def optimize_weights(
         result = solve(return_matrix, bounds, initial, risk_parity_objective)
     elif strategy_value == Strategy.MINIMIZE_DRAWDOWN.value:
         result = solve(return_matrix, bounds, initial, drawdown_objective)
+    elif strategy_value == Strategy.OPTIMIZE_FACTOR_EXPOSURE.value:
+        if factor_return_matrix is None or factor_target is None:
+            raise OptimizationError("factor_target is required for factor exposure")
+        result = solve(
+            return_matrix,
+            bounds,
+            initial,
+            negative_factor_exposure_objective,
+            factor_return_matrix,
+            factor_target,
+        )
     else:
         raise OptimizationError(f"Unsupported strategy: {strategy}")
 
@@ -68,11 +82,12 @@ def solve(
     bounds: list[tuple[float, float]],
     initial: np.ndarray,
     objective,
+    *extra_args,
 ):
     result = minimize(
         objective,
         initial,
-        args=(return_matrix,),
+        args=(return_matrix, *extra_args),
         method="SLSQP",
         bounds=bounds,
         constraints=({"type": "eq", "fun": lambda weights: np.sum(weights) - 1},),
@@ -136,3 +151,17 @@ def portfolio_return_objective(
     returns = portfolio_return_series(return_matrix, weights_dict(return_matrix, weights))
     return -annualized_return(returns)
 
+
+def negative_factor_exposure_objective(
+    weights: np.ndarray,
+    return_matrix: pd.DataFrame,
+    factor_return_matrix: pd.DataFrame,
+    factor_target: str,
+) -> float:
+    exposure = target_factor_beta(
+        return_matrix,
+        factor_return_matrix,
+        weights_dict(return_matrix, weights),
+        factor_target,
+    )
+    return -exposure
