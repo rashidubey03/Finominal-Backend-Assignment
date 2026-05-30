@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException
 
 from app.constraints import ConstraintViolation, validate_all_constraints
 from app.data_loader import PortfolioData
-from app.portfolio_math import calculate_metrics, round_weights_to_100
+from app.optimizer import OptimizationError, optimize_weights
+from app.portfolio_math import calculate_metrics
 from app.schemas import (
     AllocationChange,
     OptimizeRequest,
@@ -31,9 +32,17 @@ def build_router(data: PortfolioData) -> APIRouter:
                 detail=f"Unknown factor: {request.factor_target}",
             )
 
-        metadata = data.fund_metadata()
-        optimized_weights = equal_weight_allocation(tickers)
         return_matrix = data.fund_return_matrix(tickers)
+        metadata = data.fund_metadata()
+        try:
+            optimized_weights = optimize_weights(
+                request.strategy,
+                return_matrix,
+                request.constraints,
+            )
+        except OptimizationError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         metrics = calculate_metrics(return_matrix, optimized_weights, metadata)
         try:
             validate_all_constraints(optimized_weights, metrics, request.constraints)
@@ -58,9 +67,3 @@ def build_router(data: PortfolioData) -> APIRouter:
         )
 
     return router
-
-
-def equal_weight_allocation(tickers: list[str]) -> dict[str, float]:
-    weight = round(100 / len(tickers), 10)
-    weights = {ticker: weight for ticker in tickers}
-    return round_weights_to_100(weights, decimals=10)

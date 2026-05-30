@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -46,6 +47,28 @@ def test_optimize_accepts_valid_contract() -> None:
             "change": -25.0,
         },
     ]
+
+
+def test_optimize_runs_non_equal_strategy() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "SPY", "weight": 60},
+                {"ticker": "AGG", "weight": 30},
+                {"ticker": "GLD", "weight": 10},
+            ],
+            "strategy": "minimize_volatility",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["optimization_strategy"] == "minimize_volatility"
+    optimized_total = sum(
+        item["optimized_weight"] for item in body["allocation_changes"]
+    )
+    assert optimized_total == pytest.approx(100)
 
 
 def test_optimize_normalizes_strategy_alias_and_ticker() -> None:
