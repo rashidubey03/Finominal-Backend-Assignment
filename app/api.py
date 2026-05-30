@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.data_loader import PortfolioData
+from app.portfolio_math import calculate_metrics, round_weights_to_100
 from app.schemas import (
     AllocationChange,
     OptimizeRequest,
@@ -31,6 +32,8 @@ def build_router(data: PortfolioData) -> APIRouter:
 
         metadata = data.fund_metadata()
         optimized_weights = equal_weight_allocation(tickers)
+        return_matrix = data.fund_return_matrix(tickers)
+        metrics = calculate_metrics(return_matrix, optimized_weights, metadata)
         allocation_changes = [
             AllocationChange(
                 ticker=holding.ticker,
@@ -45,7 +48,7 @@ def build_router(data: PortfolioData) -> APIRouter:
         return OptimizeResponse(
             optimization_strategy=request.strategy,
             allocation_changes=allocation_changes,
-            metrics=PortfolioMetrics(),
+            metrics=PortfolioMetrics(**metrics),
         )
 
     return router
@@ -54,7 +57,4 @@ def build_router(data: PortfolioData) -> APIRouter:
 def equal_weight_allocation(tickers: list[str]) -> dict[str, float]:
     weight = round(100 / len(tickers), 10)
     weights = {ticker: weight for ticker in tickers}
-    diff = round(100 - sum(weights.values()), 10)
-    weights[tickers[-1]] = round(weights[tickers[-1]] + diff, 10)
-    return weights
-
+    return round_weights_to_100(weights, decimals=10)

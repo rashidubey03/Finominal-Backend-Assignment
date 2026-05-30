@@ -22,6 +22,14 @@ def test_optimize_accepts_valid_contract() -> None:
     body = response.json()
     assert body["optimization_strategy"] == "equal_weights"
     assert body["factor_betas"] is None
+    assert set(body["metrics"]) == {
+        "expected_return",
+        "volatility",
+        "sharpe_ratio",
+        "max_drawdown",
+        "dividend_yield",
+    }
+    assert body["metrics"]["volatility"] is not None
     assert body["allocation_changes"] == [
         {
             "ticker": "IEFA",
