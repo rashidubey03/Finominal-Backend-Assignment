@@ -94,13 +94,12 @@ def require_columns(df: pd.DataFrame, required: set[str], label: str) -> None:
 
 def normalize_fund_info(df: pd.DataFrame) -> pd.DataFrame:
     require_columns(df, {"ticker", "fund_name", "dividend_yield"}, "Fund Info")
-    normalized = df.copy()
+    normalized = df.copy().dropna(subset=["ticker", "fund_name"])
     normalized["ticker"] = normalized["ticker"].astype(str).str.upper().str.strip()
     normalized["fund_name"] = normalized["fund_name"].astype(str).str.strip()
     normalized["dividend_yield"] = pd.to_numeric(
         normalized["dividend_yield"], errors="coerce"
     )
-    normalized = normalized.dropna(subset=["ticker", "fund_name"])
     return normalized.drop_duplicates("ticker").sort_values("ticker").reset_index(
         drop=True
     )
@@ -108,7 +107,7 @@ def normalize_fund_info(df: pd.DataFrame) -> pd.DataFrame:
 
 def normalize_fund_returns(df: pd.DataFrame) -> pd.DataFrame:
     require_columns(df, {"date", "total_return", "ticker"}, "Fund Returns")
-    normalized = df.copy()
+    normalized = df.copy().dropna(subset=["date", "ticker", "total_return"])
     normalized["date"] = pd.to_datetime(normalized["date"])
     normalized["ticker"] = normalized["ticker"].astype(str).str.upper().str.strip()
     normalized["total_return"] = pd.to_numeric(
@@ -120,7 +119,7 @@ def normalize_fund_returns(df: pd.DataFrame) -> pd.DataFrame:
 
 def normalize_factor_returns(df: pd.DataFrame) -> pd.DataFrame:
     require_columns(df, {"date", "total_return", "index_ticker"}, "Factor Returns")
-    normalized = df.copy()
+    normalized = df.copy().dropna(subset=["date", "total_return", "index_ticker"])
     normalized["date"] = pd.to_datetime(normalized["date"])
     normalized["factor"] = normalized["index_ticker"].map(normalize_factor_name)
     normalized["total_return"] = pd.to_numeric(
@@ -144,4 +143,3 @@ def validate_known_values(values: list[str], known: list[str], label: str) -> No
     missing = sorted(set(values).difference(known))
     if missing:
         raise DataLoadError(f"Unknown {label}s: {', '.join(missing)}")
-

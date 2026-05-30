@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from app.constraints import validate_weight_constraints
-from app.optimizer import optimize_weights
+from app.optimizer import OptimizationError, optimize_weights
 from app.portfolio_math import annualized_volatility, portfolio_return_series
 from app.schemas import Constraints, Strategy
 
@@ -100,3 +100,22 @@ def test_optimize_factor_exposure(returns: pd.DataFrame) -> None:
     )
 
     assert_valid_weights(weights)
+
+
+def test_factor_exposure_requires_factor_inputs(returns: pd.DataFrame) -> None:
+    with pytest.raises(OptimizationError, match="factor_target is required"):
+        optimize_weights(
+            Strategy.OPTIMIZE_FACTOR_EXPOSURE,
+            returns,
+            Constraints(),
+        )
+
+
+def test_infeasible_optimizer_constraints_raise_error(returns: pd.DataFrame) -> None:
+    with pytest.raises(OptimizationError):
+        optimize_weights(
+            Strategy.MAXIMIZE_SHARPE,
+            returns,
+            Constraints(min_dividend_yield=0.99),
+            dividend_yields={"AAA": 0.01, "BBB": 0.02, "CCC": 0.03},
+        )

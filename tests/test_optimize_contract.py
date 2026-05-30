@@ -184,3 +184,52 @@ def test_optimize_rejects_unsatisfied_runtime_constraint() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "portfolio drawdown exceeds max_drawdown"
+
+
+def test_optimize_rejects_duplicate_tickers() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "SPY", "weight": 50},
+                {"ticker": "spy", "weight": 50},
+            ],
+            "strategy": "equal_weights",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "duplicate tickers" in str(response.json())
+
+
+def test_optimize_rejects_unknown_factor() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "SPY", "weight": 50},
+                {"ticker": "AGG", "weight": 50},
+            ],
+            "strategy": "optimize_factor_exposure",
+            "factor_target": "not_real",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Unknown factor: not_real"
+
+
+def test_optimize_defaults_factor_target_for_bonus() -> None:
+    response = client.post(
+        "/optimize",
+        json={
+            "holdings": [
+                {"ticker": "SPY", "weight": 50},
+                {"ticker": "AGG", "weight": 50},
+            ],
+            "strategy": "optimize_factor_exposure",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["factor_betas"] is not None
