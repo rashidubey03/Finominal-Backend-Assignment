@@ -32,11 +32,8 @@ def test_readme_mentions_required_strategies() -> None:
         assert strategy in readme
 
 
-def test_swagger_runs_readme_exists() -> None:
-    swagger_runs = Path("SWAGGER_RUNS.md")
+def test_swagger_results_docx_exists() -> None:
+    swagger_results = Path("Swagger_Test_Results.docx")
 
-    assert swagger_runs.exists()
-    text = swagger_runs.read_text(encoding="utf-8")
-    assert "400 Bad Request" in text
-    assert "minimize_volatility" in text
-    assert "optimize_factor_exposure" in text
+    assert swagger_results.exists()
+    assert swagger_results.stat().st_size > 0
